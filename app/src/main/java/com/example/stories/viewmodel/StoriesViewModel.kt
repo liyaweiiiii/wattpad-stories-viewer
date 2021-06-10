@@ -1,81 +1,45 @@
 package com.example.stories.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
 import com.example.stories.data.DataRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlin.coroutines.CoroutineContext
+import com.example.stories.model.Result
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
+import javax.inject.Inject
 
-class StoriesViewModel(val repository: DataRepository) : ViewModel(), CoroutineScope {
-    private val viewModelJob = Job()
+@HiltViewModel
+class StoriesViewModel @Inject constructor(repository: DataRepository) : ViewModel() {
 
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + viewModelJob
+    private val storiesResult = repository.fetchStories()
+        .shareIn(
+            replay = 1,
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly
+        )
 
-    /**
-     * Cancel all coroutines when the ViewModel is cleared
-     */
-    override fun onCleared() {
-        super.onCleared()
-        viewModelJob.cancel()
-    }
+    val stories = storiesResult
+        .filter { it.status == Result.Status.SUCCESS }
+        .map { it.data }
+        .asLiveData()
 
-    val stories = repository.stories
-
-    private lateinit var isLoading: MutableLiveData<Boolean>
-
-    fun getIsLoading(): LiveData<Boolean> {
-        if (!::isLoading.isInitialized) {
-            isLoading = MutableLiveData()
+    val isLoading = storiesResult
+        .map {
+            it.status == Result.Status.LOADING
         }
-        return isLoading
-    }
+        .asLiveData()
 
-    private lateinit var showError: MutableLiveData<Boolean>
+    val showError = storiesResult
+        .filter { it.status == Result.Status.ERROR }
+        .map { it.message }
+        .asLiveData()
 
-    fun shouldShowError(): LiveData<Boolean> {
-        if (!::showError.isInitialized) {
-            showError = MutableLiveData()
-        }
-        return showError
-    }
-
-    private lateinit var showOfflineWarning: MutableLiveData<Boolean>
-
-    fun shouldShowOfflineWarning(): LiveData<Boolean> {
-        if (!::showOfflineWarning.isInitialized) {
-            showOfflineWarning = MutableLiveData()
-            showOfflineWarning.value = false
-        }
-        return showOfflineWarning
-    }
-
-    fun loadStories() {
-        launch {
-            try {
-                isLoading.value = true
-                repository.refreshStories()
-            } catch (e: Exception) {
-                //Either network or db failed, incase of network failure, display cached data.
-                stories.value?.let {
-                    if (it.isNotEmpty()){
-                        //Displaying cached result
-                        showError.value = false
-                        showOfflineWarning.value = true
-                    } else {
-                        //No data, show error message
-                        showError.value = true
-                        showOfflineWarning.value = false
-                    }
-                }
-                e.printStackTrace()
-            } finally {
-                isLoading.value = false
-            }
-        }
-    }
+    val showEvent = storiesResult
+        .filter { it.status == Result.Status.EVENT }
+        .map { it.message }
+        .asLiveData()
 }

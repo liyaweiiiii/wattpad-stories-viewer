@@ -14,7 +14,10 @@ class StoriesAdapter : RecyclerView.Adapter<StoryViewHolder>() {
     private var mStoryList = listOf<Story>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StoryViewHolder {
-        return StoryViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewholder_story_item, parent, false))
+        return StoryViewHolder(
+            LayoutInflater.from(parent.context)
+                .inflate(R.layout.viewholder_story_item, parent, false)
+        )
     }
 
     override fun getItemCount() = mStoryList.size
