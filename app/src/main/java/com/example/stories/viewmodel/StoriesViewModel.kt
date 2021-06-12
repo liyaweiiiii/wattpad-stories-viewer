@@ -6,16 +6,27 @@ import androidx.lifecycle.viewModelScope
 import com.example.stories.data.DataRepository
 import com.example.stories.model.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class StoriesViewModel @Inject constructor(repository: DataRepository) : ViewModel() {
+    private val _refresh: MutableSharedFlow<Unit> =
+        MutableSharedFlow(
+            replay = 0
+        )
 
-    private val storiesResult = repository.fetchStories()
+    fun load() {
+        viewModelScope.launch {
+            _refresh.emit(Unit)
+        }
+    }
+
+    private val storiesResult = _refresh
+        .flatMapLatest {
+            repository.fetchStories()
+        }
         .shareIn(
             replay = 1,
             scope = viewModelScope,
@@ -42,4 +53,8 @@ class StoriesViewModel @Inject constructor(repository: DataRepository) : ViewMod
         .filter { it.status == Result.Status.EVENT }
         .map { it.message }
         .asLiveData()
+
+    init {
+        load()
+    }
 }

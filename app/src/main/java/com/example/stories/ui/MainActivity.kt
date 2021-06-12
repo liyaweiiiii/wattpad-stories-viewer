@@ -1,7 +1,6 @@
 package com.example.stories.ui
 
 import android.os.Bundle
-import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,6 +24,10 @@ class MainActivity : AppCompatActivity() {
         binding.storiesList.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         binding.storiesList.adapter = StoriesAdapter()
 
+        binding.refreshLayout.setOnRefreshListener {
+            viewModel.load()
+        }
+
         subscribeUi(viewModel)
     }
 
@@ -36,7 +39,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         viewModel.isLoading.observe(this, {
-            binding.loadingSpinner.visibility = if (it) View.VISIBLE else View.GONE
+            binding.refreshLayout.isRefreshing = it
         })
 
         viewModel.showError.observe(this, {
