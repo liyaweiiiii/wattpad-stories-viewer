@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.stories.data.DataRepository
+import com.example.stories.data.IDataRepository
 import com.example.stories.model.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -11,7 +12,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class StoriesViewModel @Inject constructor(repository: DataRepository) : ViewModel() {
+class StoriesViewModel @Inject constructor(repository: IDataRepository) : ViewModel() {
     private val _refresh: MutableSharedFlow<Unit> =
         MutableSharedFlow(
             replay = 0

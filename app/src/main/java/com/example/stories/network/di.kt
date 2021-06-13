@@ -1,5 +1,7 @@
 package com.example.stories.network
 
+import com.example.stories.data.DataRepository
+import com.example.stories.data.IDataRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,6 +26,13 @@ object NetworkModule {
         networkClient: NetworkClient
     ): INetworkClient {
         return networkClient
+    }
+
+    @Provides
+    fun provideIDataRepository(
+        dataRepository: DataRepository
+    ): IDataRepository {
+        return dataRepository
     }
 
     @Singleton
